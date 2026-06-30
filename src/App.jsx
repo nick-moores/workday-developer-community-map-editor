@@ -167,8 +167,9 @@ export default function App() {
           newCities.push({ id: nextId++, name, col, row, color: COLORS[ci] });
         }
         setGrid(newGrid);
-        setCities(newCities);
-        showToast(`Loaded — ${Object.keys(newGrid).length} cells, ${newCities.length} pins`);
+        if (newCities.length > 0) setCities(newCities);
+        const pinNote = newCities.length > 0 ? `, ${newCities.length} pins` : " (kept existing pins)";
+        showToast(`Loaded — ${Object.keys(newGrid).length} cells${pinNote}`);
       } catch {
         showToast("Failed to parse SVG");
       }
