@@ -81,6 +81,7 @@ export default function App() {
   const [cities, setCities]   = useState(INITIAL_CITIES);
   const [mode, setMode]       = useState("view"); // "view" | "highlight" | "erase" | "city" | "country"
   const [hoveredCountry, setHoveredCountry] = useState(null);
+  const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 });
   const [hlColor, setHlColor] = useState("#FFC2FD");
   const [pinColor, setPinColor] = useState("#BA4ACA");
   const [editingCity, setEditingCity] = useState(null); // { id, name }
@@ -143,7 +144,9 @@ export default function App() {
     if (mode !== "country") { setHoveredCountry(null); return; }
     const cell = svgToCell(e);
     if (!cell) { setHoveredCountry(null); return; }
-    setHoveredCountry(countryLookup.get(cell.key) ?? null);
+    const country = countryLookup.get(cell.key) ?? null;
+    setHoveredCountry(country);
+    setTooltipPos({ x: e.clientX, y: e.clientY });
   }, [mode, svgToCell, countryLookup]);
 
   // ── Confirm new city ───────────────────────────────────────────────────────
@@ -238,8 +241,13 @@ export default function App() {
       const y = (row * STEP).toFixed(2);
       return `<rect x="${x}" y="${y}" width="${RECT}" height="${RECT}" fill="${COLORS[ci]}" opacity="0.99"/>`;
     }).join("");
-    return `<svg viewBox="0 0 ${VIEW_W} ${VIEW_H}" xmlns="http://www.w3.org/2000/svg" id="Layer_2" overflow="hidden"><defs></defs><g id="_150_Group">${rects}</g></svg>`;
-  }, [grid]);
+    const labels = cities.map(city => {
+      const x = (city.col * STEP + RECT + 6).toFixed(2);
+      const y = (city.row * STEP + RECT * 0.75).toFixed(2);
+      return `<text x="${x}" y="${y}" fill="white" font-size="16" font-family="Arial, sans-serif">${city.name}</text>`;
+    }).join("");
+    return `<svg viewBox="0 0 ${VIEW_W} ${VIEW_H}" xmlns="http://www.w3.org/2000/svg" id="Layer_2" overflow="hidden"><defs></defs><g id="_150_Group">${rects}${labels}</g></svg>`;
+  }, [grid, cities]);
 
   // ── Export SVG ─────────────────────────────────────────────────────────────
   const exportSVG = () => {
@@ -462,6 +470,13 @@ export default function App() {
                   </text>
                 </g>
               ))}
+              {/* Country hover preview */}
+              {mode === "country" && hoveredCountry && (countryCells.get(hoveredCountry) ?? []).map(key => {
+                const [c, r] = key.split(",").map(Number);
+                return <rect key={`hl-${key}`} x={c * STEP} y={r * STEP} width={RECT} height={RECT}
+                  fill={hlColor} opacity={0.55} style={{ pointerEvents: "none" }} />;
+              })}
+
               {/* Pending city indicator */}
               {pendingCity && (
                 <rect x={pendingCity.col * STEP - 4} y={pendingCity.row * STEP - 4}
@@ -515,6 +530,19 @@ export default function App() {
             </div>
             <button onClick={() => setShowPptxModal(false)} style={{ ...btnStyle("#6923B6"), marginTop: 16 }}>Close</button>
           </div>
+        </div>
+      )}
+
+      {/* ── Country tooltip ── */}
+      {mode === "country" && hoveredCountry && (
+        <div style={{
+          position: "fixed", left: tooltipPos.x + 14, top: tooltipPos.y - 10,
+          background: "#1e3a6e", color: "#e0e8ff", padding: "4px 10px",
+          borderRadius: 6, fontSize: 12, fontWeight: 600, pointerEvents: "none",
+          zIndex: 300, boxShadow: "0 2px 8px rgba(0,0,0,0.5)",
+          border: `1px solid ${hlColor}`,
+        }}>
+          {hoveredCountry}
         </div>
       )}
 
