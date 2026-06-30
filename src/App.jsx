@@ -138,6 +138,17 @@ export default function App() {
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ grid, cities, palette })); } catch {}
   }, [grid, cities, palette]);
 
+  const showToast = (msg) => {
+    setToast(msg);
+    clearTimeout(toastTimer.current);
+    toastTimer.current = setTimeout(() => setToast(""), 2000);
+  };
+
+  const saveMap = () => {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ grid, cities, palette })); } catch {}
+    showToast("Map saved!");
+  };
+
   const loadSVG = (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -176,17 +187,6 @@ export default function App() {
       e.target.value = "";
     };
     reader.readAsText(file);
-  };
-
-  const saveMap = () => {
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ grid, cities, palette })); } catch {}
-    showToast("Map saved!");
-  };
-
-  const showToast = (msg) => {
-    setToast(msg);
-    clearTimeout(toastTimer.current);
-    toastTimer.current = setTimeout(() => setToast(""), 2000);
   };
 
   // ── Shared helper: SVG pointer → grid col/row ─────────────────────────────
