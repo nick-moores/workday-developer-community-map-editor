@@ -63,6 +63,29 @@ let nextId = 100;
 
 const STORAGE_KEY = "workday_map_v1";
 
+// ── SVG import helpers ────────────────────────────────────────────────────────
+function hexToRgb(hex) {
+  const n = parseInt(hex.replace("#", ""), 16);
+  return [n >> 16 & 255, n >> 8 & 255, n & 255];
+}
+function colorDist(a, b) {
+  try {
+    const [ar,ag,ab] = hexToRgb(a), [br,bg,bb] = hexToRgb(b);
+    return Math.sqrt((ar-br)**2 + (ag-bg)**2 + (ab-bb)**2);
+  } catch { return Infinity; }
+}
+function findClosestPaletteIndex(fill, colors) {
+  const norm = fill?.toLowerCase();
+  const exact = colors.findIndex(c => c.toLowerCase() === norm);
+  if (exact >= 0) return exact;
+  let best = 0, bestDist = Infinity;
+  for (let i = 0; i < colors.length; i++) {
+    const d = colorDist(fill, colors[i]);
+    if (d < bestDist) { bestDist = d; best = i; }
+  }
+  return best;
+}
+
 function loadSaved() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
@@ -108,11 +131,51 @@ export default function App() {
   const [toast, setToast]     = useState("");
   const svgRef = useRef(null);
   const toastTimer = useRef(null);
+  const loadInputRef = useRef(null);
 
   // Auto-save whenever grid, cities, or palette changes
   useEffect(() => {
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ grid, cities, palette })); } catch {}
   }, [grid, cities, palette]);
+
+  const loadSVG = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      try {
+        const doc = new DOMParser().parseFromString(ev.target.result, "image/svg+xml");
+        const newGrid = {};
+        for (const rect of doc.querySelectorAll("rect")) {
+          const x = parseFloat(rect.getAttribute("x"));
+          const y = parseFloat(rect.getAttribute("y"));
+          const fill = rect.getAttribute("fill");
+          if (isNaN(x) || isNaN(y) || !fill) continue;
+          const col = Math.round(x / STEP);
+          const row = Math.round(y / STEP);
+          newGrid[`${col},${row}`] = findClosestPaletteIndex(fill, COLORS);
+        }
+        const newCities = [];
+        for (const text of doc.querySelectorAll("text")) {
+          const x = parseFloat(text.getAttribute("x"));
+          const y = parseFloat(text.getAttribute("y"));
+          const name = text.textContent?.trim();
+          if (isNaN(x) || isNaN(y) || !name) continue;
+          const col = Math.round((x - RECT - 6) / STEP);
+          const row = Math.round((y - RECT * 0.75) / STEP);
+          const ci = newGrid[`${col},${row}`] ?? 6;
+          newCities.push({ id: nextId++, name, col, row, color: COLORS[ci] });
+        }
+        setGrid(newGrid);
+        setCities(newCities);
+        showToast(`Loaded — ${Object.keys(newGrid).length} cells, ${newCities.length} pins`);
+      } catch {
+        showToast("Failed to parse SVG");
+      }
+      e.target.value = "";
+    };
+    reader.readAsText(file);
+  };
 
   const saveMap = () => {
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ grid, cities, palette })); } catch {}
@@ -323,6 +386,8 @@ export default function App() {
           ✦ WORKDAY MAP EDITOR
         </div>
         <div style={{ flex: 1 }} />
+        <input ref={loadInputRef} type="file" accept=".svg" style={{ display: "none" }} onChange={loadSVG} />
+        <button onClick={() => loadInputRef.current?.click()} style={btnStyle("#22863a", true)}>📂 Load SVG</button>
         <button onClick={saveMap}          style={btnStyle("#22863a")}>💾 Save Map</button>
         <button onClick={exportSVG}       style={btnStyle("#1C98E8")}>⬇ Export SVG</button>
         <button onClick={() => setShowPptxModal(true)} style={btnStyle("#6923B6")}>📁 PPTX Guide</button>
