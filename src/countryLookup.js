@@ -173,13 +173,19 @@ export function buildCountryLookup(rawCells) {
   }
 
   // Pin US and Canada boundaries to the hand-crafted preset colors in RAW_CELLS.
-  // Color index 2 (Deep Purple) = US lower 48; color index 1 (Pink) at col ≥ 89 = Canada,
-  // EXCEPT where polygon detection already confirmed the cell is in the US (a few stray
-  // pink cells sit in California, NJ, Texas due to the original artistic coloring).
+  // Color index 2 (Deep Purple) = US lower 48.
+  // Color index 1 (Pink) at col ≥ 89 = Canada, with two nuances:
+  //   - Above 49°N: always Canada (fixes Yukon/BC cells that Alaska's polygon incorrectly claims)
+  //   - Below 49°N: only Canada if polygon detection didn't identify the cell as US
+  //     (a few stray pink cells sit in Michigan UP, NJ, California, Texas)
   for (const [col, row, colorIndex] of rawCells) {
     const key = `${col},${row}`;
-    if (colorIndex === 2) lookup.set(key, 'United States');
-    else if (colorIndex === 1 && col >= 89 && lookup.get(key) !== 'United States') lookup.set(key, 'Canada');
+    if (colorIndex === 2) {
+      lookup.set(key, 'United States');
+    } else if (colorIndex === 1 && col >= 89) {
+      const lat = 104.31 - 2.615 * row;
+      if (lat > 49 || lookup.get(key) !== 'United States') lookup.set(key, 'Canada');
+    }
   }
 
   return lookup;
