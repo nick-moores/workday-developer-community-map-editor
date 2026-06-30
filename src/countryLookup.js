@@ -138,6 +138,11 @@ export function buildCountryLookup(rawCells) {
   const OVERRIDES = {
     '6,19': 'Ireland',
     '6,20': 'Ireland',
+    // col 1-3 row 13 are on Greenland's eastern coast geographically (~70°N) but
+    // visually represent Iceland on this stylized map.
+    '1,13': 'Iceland',
+    '2,13': 'Iceland',
+    '3,13': 'Iceland',
   };
   for (const [key, country] of Object.entries(OVERRIDES)) lookup.set(key, country);
 
@@ -170,6 +175,17 @@ export function buildCountryLookup(rawCells) {
     // Greenland's real easternmost point is ~-12°W; clamp bleed into Iceland.
     if (country === "Greenland" && lon > -13) { lookup.delete(key); continue; }
 
+  }
+
+  // Northern Greenland cells (rows 0-8) fail polygon detection:
+  //   rows 0-5 clamp to 90°N (no polygon reaches the North Pole),
+  //   rows 6-8 (~83-89°N) are beyond the simplified 50m polygon's northern extent.
+  // Fill any still-unlabeled cells in Greenland's longitude band with Greenland.
+  for (const [col, row] of rawCells) {
+    const key = `${col},${row}`;
+    if (lookup.has(key) || row > 8) continue;
+    const [lon] = cellToLonLat(col, row);
+    if (lon >= -66 && lon <= -18) lookup.set(key, 'Greenland');
   }
 
   // Pin US and Canada boundaries to the hand-crafted preset colors in RAW_CELLS.
