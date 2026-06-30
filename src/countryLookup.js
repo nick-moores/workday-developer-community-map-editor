@@ -133,6 +133,14 @@ export function buildCountryLookup(rawCells) {
     }
   }
 
+  // Manual overrides for cells where the 50m polygon data gives the wrong answer
+  // (coastal zones, small islands, or map projection gaps).
+  const OVERRIDES = {
+    '6,19': 'Ireland',
+    '6,20': 'Ireland',
+  };
+  for (const [key, country] of Object.entries(OVERRIDES)) lookup.set(key, country);
+
   // Remove geographically impossible Russia assignments BEFORE adjacency fill
   // so that Norway/Finland/Sweden cells win the majority vote in the border zone.
   // (1) Antimeridian artifact: eastern island polygons cause false positives in western hemisphere.
