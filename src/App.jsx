@@ -30,7 +30,7 @@ const INITIAL_CITIES = [
   { id: 4, name: "Bengaluru, India",     col: 38,  row: 34, color: "#FC5B05" },
   { id: 5, name: "Toronto, Canada",      col: 114, row: 22, color: "#BA4ACA" },
   { id: 6, name: "Tokyo, Japan",         col: 60,  row: 26, color: "#1C98E8" },
-  { id: 7, name: "San Francisco, CA",    col: 97,  row: 25, color: "#1C98E8" },
+  { id: 7, name: "San Francisco, CA",    col: 96,  row: 25, color: "#1C98E8" },
   { id: 8, name: "Washington, D.C.",     col: 115, row: 25, color: "#BA4ACA" },
   { id: 9, name: "Dallas, Texas",        col: 105, row: 29, color: "#FC5B05" },
 ];
@@ -412,7 +412,7 @@ export default function App() {
                 )}
                 {/* Color picker for city */}
                 <div style={{ display: "flex", gap: 2 }}>
-                  {PIN_COLORS.slice(0,3).map(({ color }) => (
+                  {PIN_COLORS.map(({ color }) => (
                     <div key={color} onClick={() => updateCityColor(city.id, color)}
                       style={{ width: 8, height: 8, borderRadius: 2, background: color, cursor: "pointer",
                         border: city.color === color ? "1px solid #fff" : "1px solid transparent" }} />
