@@ -61,8 +61,18 @@ function buildBaseGrid() {
 
 let nextId = 100;
 
+const STORAGE_KEY = "workday_map_v1";
+
+function loadSaved() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw);
+  } catch { return null; }
+}
+
 export default function App() {
-  const [palette, setPalette] = useState(DEFAULT_PALETTE);
+  const [palette, setPalette] = useState(() => loadSaved()?.palette ?? DEFAULT_PALETTE);
   const COLORS = palette.map(p => p.hex);
 
   // Build cell→country lookup once (expensive — ~2900 cells × 177 countries)
@@ -77,8 +87,15 @@ export default function App() {
     return map;
   }, [countryLookup]);
 
-  const [grid, setGrid]       = useState(buildBaseGrid);
-  const [cities, setCities]   = useState(INITIAL_CITIES);
+  const [grid, setGrid] = useState(() => loadSaved()?.grid ?? buildBaseGrid());
+  const [cities, setCities] = useState(() => {
+    const saved = loadSaved();
+    if (saved?.cities) {
+      nextId = Math.max(nextId, ...saved.cities.map(c => c.id + 1));
+      return saved.cities;
+    }
+    return INITIAL_CITIES;
+  });
   const [mode, setMode]       = useState("view"); // "view" | "highlight" | "erase" | "city" | "country"
   const [hoveredCountry, setHoveredCountry] = useState(null);
   const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 });
@@ -91,6 +108,16 @@ export default function App() {
   const [toast, setToast]     = useState("");
   const svgRef = useRef(null);
   const toastTimer = useRef(null);
+
+  // Auto-save whenever grid, cities, or palette changes
+  useEffect(() => {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ grid, cities, palette })); } catch {}
+  }, [grid, cities, palette]);
+
+  const saveMap = () => {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ grid, cities, palette })); } catch {}
+    showToast("Map saved!");
+  };
 
   const showToast = (msg) => {
     setToast(msg);
@@ -227,10 +254,13 @@ export default function App() {
 
   // ── Reset to original ──────────────────────────────────────────────────────
   const resetAll = () => {
+    if (!window.confirm("Factory reset? This clears your saved map and restores the original defaults.")) return;
+    localStorage.removeItem(STORAGE_KEY);
     setGrid(buildBaseGrid());
     setCities(INITIAL_CITIES);
+    setPalette(DEFAULT_PALETTE);
     setSelectedCity(null);
-    showToast("Reset to original");
+    showToast("Reset to factory defaults");
   };
 
   // ── Generate SVG string ────────────────────────────────────────────────────
@@ -293,9 +323,10 @@ export default function App() {
           ✦ WORKDAY MAP EDITOR
         </div>
         <div style={{ flex: 1 }} />
+        <button onClick={saveMap}          style={btnStyle("#22863a")}>💾 Save Map</button>
         <button onClick={exportSVG}       style={btnStyle("#1C98E8")}>⬇ Export SVG</button>
         <button onClick={() => setShowPptxModal(true)} style={btnStyle("#6923B6")}>📁 PPTX Guide</button>
-        <button onClick={resetAll}        style={btnStyle("#FC5B05", true)}>↺ Reset</button>
+        <button onClick={resetAll}        style={btnStyle("#FC5B05", true)}>↺ Factory Reset</button>
       </div>
 
       <div style={{ display: "flex", flex: 1, overflow: "hidden", minHeight: 0 }}>
