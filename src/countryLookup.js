@@ -80,7 +80,7 @@ function adjacencyFill(lookup, rawCells) {
 
   let changed = true;
   let passes = 0;
-  while (changed && passes < 6) {
+  while (changed && passes < 3) {
     changed = false;
     passes++;
     for (const [col, row] of rawCells) {
@@ -123,16 +123,30 @@ export function buildCountryLookup(rawCells) {
     }
   }
 
-  // Remove geographically impossible assignments caused by antimeridian polygon artifacts.
-  // Russia's eastern sub-polygons near 180° cause false positives in the western hemisphere.
+  // Remove geographically impossible Russia assignments BEFORE adjacency fill
+  // so that Norway/Finland/Sweden cells win the majority vote in the border zone.
+  // (1) Antimeridian artifact: eastern island polygons cause false positives in western hemisphere.
+  // (2) Scandinavia bleed: Russia shouldn't appear west of 28°E above 60°N.
+  //     (Kaliningrad is 20°E/54°N so stays; St. Petersburg is 30°E/60°N so stays.)
+  const sanitize = () => {
+    for (const [col, row] of rawCells) {
+      const key = `${col},${row}`;
+      if (lookup.get(key) !== "Russia") continue;
+      const [lon, lat] = cellToLonLat(col, row);
+      if (lon < -20 || (lon < 28 && lat > 60)) lookup.delete(key);
+    }
+  };
+  sanitize();
+  adjacencyFill(lookup, rawCells);
+
+  // Post-fill: remove Norway east of 32°E (Norway's real easternmost point ~31°E).
+  // Adjacency fill can bleed Norway into Russia's Kola Peninsula.
   for (const [col, row] of rawCells) {
     const key = `${col},${row}`;
-    const country = lookup.get(key);
-    if (!country) continue;
+    if (lookup.get(key) !== "Norway") continue;
     const [lon] = cellToLonLat(col, row);
-    if (country === "Russia" && lon < -20) lookup.delete(key);
+    if (lon > 32) lookup.delete(key);
   }
 
-  adjacencyFill(lookup, rawCells);
   return lookup;
 }
