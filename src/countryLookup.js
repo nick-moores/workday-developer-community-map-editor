@@ -1,19 +1,20 @@
 import { feature } from "topojson-client";
-import worldData from "world-atlas/countries-110m.json";
+import worldData from "world-atlas/countries-50m.json";
 
-// Grid constants (must match App.jsx)
-const STEP  = 28.54;
-const VIEW_W = 3900;
-const VIEW_H = 1845.02;
-
-// Convert grid col/row → approximate lon/lat (equirectangular)
+// Calibrated projection from known city pin anchor points:
+//   Barcelona(col9,row25)→2°E,41°N   Warsaw(col17,row20)→21°E,52°N
+//   Pune(col36,row33)→74°E,18°N      Tokyo(col60,row26)→140°E,36°N
+//   Dallas(col105,row29)→-97°W,33°N  Washington(col115,row25)→-77°W,39°N
+//   Toronto(col114,row22)→-79°W,44°N
+// Map is Atlantic-centered (col 0 ≈ -23°E), NOT standard -180°.
 function cellToLonLat(col, row) {
-  const lon = (col * STEP / VIEW_W) * 360 - 180;
-  const lat = 90 - (row * STEP / VIEW_H) * 180;
+  const lonRaw = 2.680 * col - 22.58;
+  const lon    = lonRaw > 180 ? lonRaw - 360 : lonRaw;
+  const lat    = Math.min(90, Math.max(-90, 104.31 - 2.615 * row));
   return [lon, lat];
 }
 
-// Ray-casting point-in-polygon for a single ring [[lon,lat],...]
+// Standard ray-casting point-in-polygon
 function pointInRing(px, py, ring) {
   let inside = false;
   for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
@@ -26,7 +27,6 @@ function pointInRing(px, py, ring) {
   return inside;
 }
 
-// Test a point against a GeoJSON geometry (Polygon or MultiPolygon)
 function pointInGeometry(lon, lat, geometry) {
   if (geometry.type === "Polygon") {
     const [outer, ...holes] = geometry.coordinates;
@@ -43,37 +43,62 @@ function pointInGeometry(lon, lat, geometry) {
   return false;
 }
 
-// Country numeric ID → name (ISO 3166-1 numeric, from world-atlas)
-// Only the subset we care about for labeling; unlisted ones get their numeric id as fallback
 const COUNTRY_NAMES = {
   4: "Afghanistan", 8: "Albania", 12: "Algeria", 24: "Angola", 32: "Argentina",
   36: "Australia", 40: "Austria", 50: "Bangladesh", 56: "Belgium", 64: "Bhutan",
-  68: "Bolivia", 76: "Brazil", 100: "Bulgaria", 116: "Cambodia", 120: "Cameroon",
-  124: "Canada", 152: "Chile", 156: "China", 170: "Colombia", 178: "Congo",
+  68: "Bolivia", 76: "Brazil", 100: "Bulgaria", 104: "Myanmar", 116: "Cambodia",
+  120: "Cameroon", 124: "Canada", 140: "Central African Republic", 144: "Sri Lanka",
+  152: "Chile", 156: "China", 170: "Colombia", 178: "Congo", 180: "DR Congo",
   188: "Costa Rica", 191: "Croatia", 192: "Cuba", 196: "Cyprus", 203: "Czech Republic",
-  208: "Denmark", 231: "Ethiopia", 246: "Finland", 250: "France", 276: "Germany",
-  288: "Ghana", 300: "Greece", 320: "Guatemala", 332: "Haiti", 340: "Honduras",
-  348: "Hungary", 356: "India", 360: "Indonesia", 364: "Iran", 368: "Iraq",
-  372: "Ireland", 376: "Israel", 380: "Italy", 388: "Jamaica", 392: "Japan",
-  400: "Jordan", 398: "Kazakhstan", 404: "Kenya", 408: "North Korea", 410: "South Korea",
-  414: "Kuwait", 418: "Laos", 422: "Lebanon", 426: "Lesotho", 434: "Libya",
-  440: "Lithuania", 458: "Malaysia", 484: "Mexico", 504: "Morocco", 508: "Mozambique",
-  516: "Namibia", 524: "Nepal", 528: "Netherlands", 554: "New Zealand", 558: "Nicaragua",
-  566: "Nigeria", 578: "Norway", 586: "Pakistan", 591: "Panama", 600: "Paraguay",
-  604: "Peru", 608: "Philippines", 616: "Poland", 620: "Portugal", 630: "Puerto Rico",
-  634: "Qatar", 642: "Romania", 643: "Russia", 682: "Saudi Arabia", 706: "Somalia",
-  710: "South Africa", 724: "Spain", 144: "Sri Lanka", 736: "Sudan", 752: "Sweden",
-  756: "Switzerland", 760: "Syria", 158: "Taiwan", 764: "Thailand", 800: "Uganda",
-  804: "Ukraine", 784: "United Arab Emirates", 826: "United Kingdom",
-  840: "United States", 858: "Uruguay", 860: "Uzbekistan", 862: "Venezuela",
-  704: "Vietnam", 887: "Yemen", 894: "Zambia", 716: "Zimbabwe",
-  180: "DR Congo", 729: "South Sudan", 686: "Senegal", 466: "Mali",
-  562: "Niger", 854: "Burkina Faso", 384: "Ivory Coast", 324: "Guinea",
-  480: "Mauritius", 450: "Madagascar", 630: "Puerto Rico", 218: "Ecuador",
-  214: "Dominican Republic", 222: "El Salvador", 662: "Saint Lucia",
+  208: "Denmark", 214: "Dominican Republic", 218: "Ecuador", 222: "El Salvador",
+  231: "Ethiopia", 246: "Finland", 250: "France", 266: "Gabon", 276: "Germany",
+  288: "Ghana", 300: "Greece", 304: "Greenland", 320: "Guatemala", 324: "Guinea",
+  332: "Haiti", 340: "Honduras", 348: "Hungary", 356: "India", 360: "Indonesia",
+  364: "Iran", 368: "Iraq", 372: "Ireland", 376: "Israel", 380: "Italy",
+  388: "Jamaica", 392: "Japan", 398: "Kazakhstan", 400: "Jordan", 404: "Kenya",
+  408: "North Korea", 410: "South Korea", 414: "Kuwait", 418: "Laos", 422: "Lebanon",
+  426: "Lesotho", 434: "Libya", 440: "Lithuania", 450: "Madagascar", 458: "Malaysia",
+  466: "Mali", 484: "Mexico", 496: "Mongolia", 504: "Morocco", 508: "Mozambique",
+  516: "Namibia", 524: "Nepal", 528: "Netherlands", 554: "New Zealand",
+  558: "Nicaragua", 562: "Niger", 566: "Nigeria", 578: "Norway", 586: "Pakistan",
+  591: "Panama", 598: "Papua New Guinea", 600: "Paraguay", 604: "Peru",
+  608: "Philippines", 616: "Poland", 620: "Portugal", 630: "Puerto Rico",
+  634: "Qatar", 642: "Romania", 643: "Russia", 682: "Saudi Arabia", 686: "Senegal",
+  704: "Vietnam", 706: "Somalia", 710: "South Africa", 716: "Zimbabwe",
+  724: "Spain", 729: "South Sudan", 736: "Sudan", 752: "Sweden", 756: "Switzerland",
+  760: "Syria", 158: "Taiwan", 764: "Thailand", 784: "United Arab Emirates",
+  788: "Tunisia", 792: "Turkey", 800: "Uganda", 804: "Ukraine", 818: "Egypt",
+  826: "United Kingdom", 834: "Tanzania", 840: "United States",
+  854: "Burkina Faso", 858: "Uruguay", 860: "Uzbekistan", 862: "Venezuela",
+  887: "Yemen", 894: "Zambia", 384: "Ivory Coast", 480: "Mauritius",
 };
 
-// Build and export the lookup map: "col,row" → country name
+// Post-process: fill unassigned cells that are surrounded by a single country
+function adjacencyFill(lookup, rawCells) {
+  const cellSet = new Set(rawCells.map(([c, r]) => `${c},${r}`));
+  const dirs = [[-1,0],[1,0],[0,-1],[0,1],[-1,-1],[-1,1],[1,-1],[1,1]];
+
+  let changed = true;
+  let passes = 0;
+  while (changed && passes < 4) {
+    changed = false;
+    passes++;
+    for (const [col, row] of rawCells) {
+      const key = `${col},${row}`;
+      if (lookup.has(key)) continue;
+      const neighborCountries = new Set();
+      for (const [dc, dr] of dirs) {
+        const nk = `${col + dc},${row + dr}`;
+        if (cellSet.has(nk) && lookup.has(nk)) neighborCountries.add(lookup.get(nk));
+      }
+      if (neighborCountries.size === 1) {
+        lookup.set(key, [...neighborCountries][0]);
+        changed = true;
+      }
+    }
+  }
+}
+
 export function buildCountryLookup(rawCells) {
   const countries = feature(worldData, worldData.objects.countries).features;
   const lookup = new Map();
@@ -90,5 +115,16 @@ export function buildCountryLookup(rawCells) {
     }
   }
 
+  // Remove geographically impossible assignments caused by antimeridian polygon artifacts.
+  // Russia's eastern sub-polygons near 180° cause false positives in the western hemisphere.
+  for (const [col, row] of rawCells) {
+    const key = `${col},${row}`;
+    const country = lookup.get(key);
+    if (!country) continue;
+    const [lon] = cellToLonLat(col, row);
+    if (country === "Russia" && lon < -20) lookup.delete(key);
+  }
+
+  adjacencyFill(lookup, rawCells);
   return lookup;
 }
