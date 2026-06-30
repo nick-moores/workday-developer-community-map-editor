@@ -73,26 +73,34 @@ const COUNTRY_NAMES = {
   887: "Yemen", 894: "Zambia", 384: "Ivory Coast", 480: "Mauritius",
 };
 
-// Post-process: fill unassigned cells that are surrounded by a single country
+// Post-process: fill unassigned cells by majority vote of assigned neighbors
 function adjacencyFill(lookup, rawCells) {
   const cellSet = new Set(rawCells.map(([c, r]) => `${c},${r}`));
   const dirs = [[-1,0],[1,0],[0,-1],[0,1],[-1,-1],[-1,1],[1,-1],[1,1]];
 
   let changed = true;
   let passes = 0;
-  while (changed && passes < 4) {
+  while (changed && passes < 6) {
     changed = false;
     passes++;
     for (const [col, row] of rawCells) {
       const key = `${col},${row}`;
       if (lookup.has(key)) continue;
-      const neighborCountries = new Set();
+      const votes = {};
       for (const [dc, dr] of dirs) {
         const nk = `${col + dc},${row + dr}`;
-        if (cellSet.has(nk) && lookup.has(nk)) neighborCountries.add(lookup.get(nk));
+        if (cellSet.has(nk) && lookup.has(nk)) {
+          const c = lookup.get(nk);
+          votes[c] = (votes[c] ?? 0) + 1;
+        }
       }
-      if (neighborCountries.size === 1) {
-        lookup.set(key, [...neighborCountries][0]);
+      const entries = Object.entries(votes);
+      if (entries.length === 0) continue;
+      // Fill if a single country holds a majority of assigned neighbors
+      const total = entries.reduce((s, [, v]) => s + v, 0);
+      const [best, count] = entries.sort((a, b) => b[1] - a[1])[0];
+      if (count > total / 2) {
+        lookup.set(key, best);
         changed = true;
       }
     }
