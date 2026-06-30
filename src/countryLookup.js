@@ -58,10 +58,10 @@ const COUNTRY_NAMES = {
   388: "Jamaica", 392: "Japan", 398: "Kazakhstan", 400: "Jordan", 404: "Kenya",
   408: "North Korea", 410: "South Korea", 414: "Kuwait", 418: "Laos", 422: "Lebanon",
   426: "Lesotho", 434: "Libya", 440: "Lithuania", 450: "Madagascar", 458: "Malaysia",
-  466: "Mali", 484: "Mexico", 496: "Mongolia", 504: "Morocco", 508: "Mozambique",
-  516: "Namibia", 524: "Nepal", 528: "Netherlands", 554: "New Zealand",
-  558: "Nicaragua", 562: "Niger", 566: "Nigeria", 578: "Norway", 586: "Pakistan",
-  591: "Panama", 598: "Papua New Guinea", 600: "Paraguay", 604: "Peru",
+  352: "Iceland", 466: "Mali", 478: "Mauritania", 484: "Mexico", 496: "Mongolia",
+  504: "Morocco", 508: "Mozambique", 516: "Namibia", 524: "Nepal", 528: "Netherlands",
+  554: "New Zealand", 558: "Nicaragua", 562: "Niger", 566: "Nigeria", 578: "Norway",
+  586: "Pakistan", 591: "Panama", 598: "Papua New Guinea", 600: "Paraguay", 604: "Peru",
   608: "Philippines", 616: "Poland", 620: "Portugal", 630: "Puerto Rico",
   634: "Qatar", 642: "Romania", 643: "Russia", 682: "Saudi Arabia", 686: "Senegal",
   704: "Vietnam", 706: "Somalia", 710: "South Africa", 716: "Zimbabwe",
@@ -109,6 +109,16 @@ function adjacencyFill(lookup, rawCells) {
 
 export function buildCountryLookup(rawCells) {
   const countries = feature(worldData, worldData.objects.countries).features;
+
+  // Test smaller/island countries before their large neighbors so Ireland beats UK,
+  // Iceland beats Greenland, Israel/Palestine don't get swallowed, etc.
+  const PRIORITY = new Set([372, 352, 376, 275, 504, 196]);
+  countries.sort((a, b) => {
+    const pa = PRIORITY.has(Number(a.id)) ? -1 : 0;
+    const pb = PRIORITY.has(Number(b.id)) ? -1 : 0;
+    return pa - pb;
+  });
+
   const lookup = new Map();
 
   for (const [col, row] of rawCells) {
@@ -139,13 +149,19 @@ export function buildCountryLookup(rawCells) {
   sanitize();
   adjacencyFill(lookup, rawCells);
 
-  // Post-fill: remove Norway east of 32°E (Norway's real easternmost point ~31°E).
-  // Adjacency fill can bleed Norway into Russia's Kola Peninsula.
+  // Post-fill geographic clamps to prevent adjacency bleed across large gaps.
   for (const [col, row] of rawCells) {
     const key = `${col},${row}`;
-    if (lookup.get(key) !== "Norway") continue;
-    const [lon] = cellToLonLat(col, row);
-    if (lon > 32) lookup.delete(key);
+    const country = lookup.get(key);
+    if (!country) continue;
+    const [lon, lat] = cellToLonLat(col, row);
+
+    // Norway's real easternmost point is ~31°E; clamp bleed into Kola Peninsula.
+    if (country === "Norway" && lon > 32) { lookup.delete(key); continue; }
+
+    // Greenland's real easternmost point is ~-12°W; clamp bleed into Iceland.
+    if (country === "Greenland" && lon > -13) { lookup.delete(key); continue; }
+
   }
 
   return lookup;
