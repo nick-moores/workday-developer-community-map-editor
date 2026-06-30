@@ -172,5 +172,15 @@ export function buildCountryLookup(rawCells) {
 
   }
 
+  // Pin US and Canada boundaries to the hand-crafted preset colors in RAW_CELLS.
+  // Color index 2 (Deep Purple) = US lower 48; color index 1 (Pink) at col ≥ 89 = Canada,
+  // EXCEPT where polygon detection already confirmed the cell is in the US (a few stray
+  // pink cells sit in California, NJ, Texas due to the original artistic coloring).
+  for (const [col, row, colorIndex] of rawCells) {
+    const key = `${col},${row}`;
+    if (colorIndex === 2) lookup.set(key, 'United States');
+    else if (colorIndex === 1 && col >= 89 && lookup.get(key) !== 'United States') lookup.set(key, 'Canada');
+  }
+
   return lookup;
 }
