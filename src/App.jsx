@@ -128,6 +128,7 @@ export default function App() {
   const [newCityName, setNewCityName] = useState("");
   const [pendingCity, setPendingCity] = useState(null); // { col, row } waiting for name
   const [selectedCity, setSelectedCity] = useState(null);
+  const [showLabels, setShowLabels] = useState(true);
   const [toast, setToast]     = useState("");
   const svgRef = useRef(null);
   const toastTimer = useRef(null);
@@ -335,13 +336,13 @@ export default function App() {
       const y = (row * STEP).toFixed(2);
       return `<rect x="${x}" y="${y}" width="${RECT}" height="${RECT}" fill="${COLORS[ci]}" opacity="0.99"/>`;
     }).join("");
-    const labels = cities.map(city => {
+    const labels = showLabels ? cities.map(city => {
       const x = (city.col * STEP + RECT + 6).toFixed(2);
       const y = (city.row * STEP + RECT * 0.75).toFixed(2);
       return `<text x="${x}" y="${y}" fill="white" font-size="16" font-family="Arial, sans-serif">${city.name}</text>`;
-    }).join("");
+    }).join("") : "";
     return `<svg viewBox="0 0 ${VIEW_W} ${VIEW_H}" xmlns="http://www.w3.org/2000/svg" id="Layer_2" overflow="hidden"><defs></defs><g id="_150_Group">${rects}${labels}</g></svg>`;
-  }, [grid, cities]);
+  }, [grid, cities, showLabels]);
 
   // ── Export SVG ─────────────────────────────────────────────────────────────
   const exportSVG = () => {
@@ -390,6 +391,9 @@ export default function App() {
         <input ref={loadInputRef} type="file" accept=".svg" style={{ display: "none" }} onChange={loadSVG} />
         <button onClick={() => loadInputRef.current?.click()} style={btnStyle("#22863a", true)}>📂 Load SVG</button>
         <button onClick={saveMap}          style={btnStyle("#22863a")}>💾 Save Map</button>
+        <button onClick={() => setShowLabels(v => !v)} style={btnStyle("#4a6080", !showLabels)}>
+          {showLabels ? "🏷 Labels On" : "🏷 Labels Off"}
+        </button>
         <button onClick={exportSVG}       style={btnStyle("#1C98E8")}>⬇ Export SVG</button>
         <button onClick={() => setShowPptxModal(true)} style={btnStyle("#6923B6")}>📁 PPTX Guide</button>
         <button onClick={resetAll}        style={btnStyle("#FC5B05", true)}>↺ Factory Reset</button>
@@ -558,13 +562,15 @@ export default function App() {
                     width={RECT} height={RECT}
                     fill={city.color} opacity={1} />
                   {/* Label */}
-                  <text
-                    x={city.col * STEP + RECT + 6}
-                    y={city.row * STEP + RECT * 0.75}
-                    fill="white" fontSize={16} fontFamily="Arial, sans-serif"
-                    style={{ pointerEvents: "none", userSelect: "none" }}>
-                    {city.name}
-                  </text>
+                  {showLabels && (
+                    <text
+                      x={city.col * STEP + RECT + 6}
+                      y={city.row * STEP + RECT * 0.75}
+                      fill="white" fontSize={16} fontFamily="Arial, sans-serif"
+                      style={{ pointerEvents: "none", userSelect: "none" }}>
+                      {city.name}
+                    </text>
+                  )}
                 </g>
               ))}
               {/* Country hover preview */}
