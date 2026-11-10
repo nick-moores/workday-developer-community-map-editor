@@ -4,8 +4,23 @@
     {
       "name": "workday-map",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev", "--", "--port", "5199"],
+      "runtimeArgs": [
+        "run",
+        "dev",
+        "--",
+        "--port",
+        "5199"
+      ],
       "port": 5199
+    },
+    {
+      "name": "workday-map-fallback",
+      "runtimeExecutable": "bash",
+      "runtimeArgs": [
+        ".claude/skills/update-dev-community-map/scripts/preview_fallback.sh",
+        "5299"
+      ],
+      "port": 5299
     }
   ]
 }

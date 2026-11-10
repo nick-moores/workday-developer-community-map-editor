@@ -9,16 +9,19 @@ Pins come from [`src/data/locations.json`](src/data/locations.json), one entry p
 ```json
 {
   "name": "Sydney, Australia",
+  "country": "Australia",
   "lat": -33.87, "lon": 151.21,
-  "events": [
-    { "title": "Innovation Days Sydney", "start": "2026-11-12", "end": "2026-11-13", "type": "test-drive", "attendees": 20 }
-  ]
+  "events": [{ "title": "Innovation Days Sydney", "start": "2026-11-12", "end": "2026-11-13", "type": "test-drive", "attendees": 20 }]
 }
 ```
 
 - **Grid cell** is computed from `lat`/`lon` (see `lonLatToCell` in `src/locations.js`). Add `"nudge": { "col": -1, "row": 0 }` to shift a pin by whole cells. Pins must land on a land cell.
 - **Status / color** is derived in the browser from event dates: *Upcoming* (pink) while any event hasn't ended, otherwise *Held in 2026* (blue). An empty `events` list means held.
-- **Country highlight**: set `"country"` (a name from `src/countryLookup.js`) and list that country in top-level `countryColors` with a palette hex to light up all its grid cells. Countries too small to own cells (e.g. Singapore) light the land cells around the pin. Neighbouring countries should get different colors, and the country color should contrast with its pin color. Spain, Poland, India, Japan, the US and Canada are hand-painted in `RAW_CELLS` instead.
+- **Countries light up automatically.** Every pin's `country` (a name from `COUNTRY_NAMES` in `src/countryLookup.js`) is painted across all of its grid cells, using real boundaries. Colors are assigned automatically (`assignCountryColors` in `src/locations.js`) so bordering countries never share a color or a look-alike color, and nearby ones (e.g. Australia and New Zealand) differ when possible. Pink, Blue and Ice Blue are never used for countries, so pins always stand out. Countries too small to own cells (e.g. Singapore) light the land cells around the pin.
+  - `litCountries`: names to light up with no pin.
+  - `countryColors`: optional `{ "Country": "#hex" }` to force a palette color.
+  - Colors are assigned in order of first appearance, so adding a country never recolors existing ones.
+- The `RAW_CELLS` colors in `App.jsx` are only used as US/Canada boundary hints by `countryLookup.js`; they are not displayed.
 - **Label side**: add `"labelSide": "left"` when a label would run over a neighbouring pin.
 - **Virtual events** have no location; record them under `virtualEvents` (no pin).
 - Editor state is cached in each browser's localStorage under a key that includes a hash of `locations.json`, so any data change automatically supersedes cached editor sessions.

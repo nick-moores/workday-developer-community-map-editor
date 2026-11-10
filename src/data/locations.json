@@ -1,21 +1,16 @@
 {
-  "_readme": "One entry per map pin. Pin status (held vs upcoming) is derived at runtime from the latest event end date. col/row are computed from lat/lon; use nudge to shift a pin by whole grid cells, and labelSide \"left\" to put the label on the left of the pin. Pins with an empty events list are earlier 2026 events with no details recorded (shown as held). country must match a name in src/countryLookup.js; add it to countryColors to light it up (a country too small to own grid cells, like Singapore, lights the land cells around its pins). Virtual events have no location, so they live in virtualEvents and get no pin.",
+  "_readme": "One entry per map pin. Pin status (held vs upcoming) is derived at runtime from the latest event end date. col/row are computed from lat/lon; use nudge to shift a pin by whole grid cells, and labelSide \"left\" to put the label on the left of the pin. Pins with an empty events list are earlier 2026 events with no details recorded (shown as held). country must match a name in src/countryLookup.js; its whole country lights up automatically, colored so neighbours differ (a country too small to own grid cells, like Singapore, lights the land cells around its pins). To light a country with no pin, add its name to litCountries; to force a color, add it to countryColors. Virtual events have no location, so they live in virtualEvents and get no pin.",
   "countryColors": {
-    "_note": "Countries painted at runtime (every grid cell in the country). Countries lit before this file existed (Spain, Poland, India, Japan, United States, Canada) are hand-painted in RAW_CELLS in App.jsx and not listed here.",
-    "United Kingdom": "#FFC2FD",
-    "Australia": "#6923B6",
-    "New Zealand": "#FF9F2C",
-    "Singapore": "#9ECFFF"
+    "_note": "Optional. Countries are colored automatically (neighbours differ). Only list a country here to force a specific palette hex."
   },
+  "litCountries": [],
   "locations": [
     {
       "name": "Barcelona, Spain",
       "country": "Spain",
       "lat": 41.39, "lon": 2.17,
       "nudge": { "col": 0, "row": 1 },
-      "events": [
-        { "title": "Rising EMEA Extend AI", "start": "2026-11-12", "end": "2026-11-22", "type": "test-drive", "attendees": 75 }
-      ]
+      "events": [{ "title": "Rising EMEA Extend AI", "start": "2026-11-12", "end": "2026-11-22", "type": "test-drive", "attendees": 75 }]
     },
     {
       "name": "Warsaw, Poland",
@@ -33,8 +28,8 @@
     {
       "name": "Pune, India",
       "country": "India",
-      "labelSide": "left",
       "lat": 18.52, "lon": 73.86,
+      "labelSide": "left",
       "events": []
     },
     {
@@ -48,9 +43,7 @@
       "country": "India",
       "lat": 12.97, "lon": 77.59,
       "nudge": { "col": 1, "row": -1 },
-      "events": [
-        { "title": "WeAreDevelopers (scouting: developer engagement, Developer Program signups, ambassador recruiting)", "start": "2026-11-22", "end": "2026-11-24", "type": "conference" }
-      ]
+      "events": [{ "title": "WeAreDevelopers (scouting: developer engagement, Developer Program signups, ambassador recruiting)", "start": "2026-11-22", "end": "2026-11-24", "type": "conference" }]
     },
     {
       "name": "Kolkata, India",
@@ -120,7 +113,7 @@
     {
       "name": "Dallas, Texas",
       "country": "United States",
-      "lat": 32.78, "lon": -96.80,
+      "lat": 32.78, "lon": -96.8,
       "nudge": { "col": -2, "row": 2 },
       "events": []
     }

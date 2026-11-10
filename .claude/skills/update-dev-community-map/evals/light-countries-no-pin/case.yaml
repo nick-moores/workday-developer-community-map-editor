@@ -1,0 +1,4 @@
+schema_version: "1.1"
+name: light-countries-no-pin
+expected_outcome: |
+  Germany and France light up without any new pins (via litCountries), in colors that don't clash with their lit neighbours; the check passes; nothing is committed.

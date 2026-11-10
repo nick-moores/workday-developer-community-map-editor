@@ -1,0 +1,4 @@
+schema_version: "1.1"
+name: cancel-kolkata-meetup
+expected_outcome: |
+  The Kolkata location is removed entirely (it had no other events), rather than left as an empty held pin; India stays lit; the map check passes; nothing is committed or pushed.

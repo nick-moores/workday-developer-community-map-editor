@@ -1,0 +1,4 @@
+schema_version: "1.1"
+name: new-country-near-uk
+expected_outcome: |
+  Wellington and Dublin are added as new pins with their events; Ireland lights up in a different color from the United Kingdom; labels near London and Dublin don't collide; the map check passes; nothing is committed or pushed.

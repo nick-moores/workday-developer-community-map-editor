@@ -1,0 +1,4 @@
+schema_version: "1.1"
+name: add-mixed-event-list
+expected_outcome: |
+  Mumbai is added as a new India pin with its meetup; the Tokyo Innovation Days event is added to the existing Tokyo pin rather than a duplicate pin; the EMEA Virtual Test Drive is recorded without a pin; the map check passes; nothing is committed or pushed.

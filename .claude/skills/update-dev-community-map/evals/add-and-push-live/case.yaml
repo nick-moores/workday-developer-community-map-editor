@@ -1,0 +1,4 @@
+schema_version: "1.1"
+name: add-and-push-live
+expected_outcome: |
+  Berlin is added as a Germany pin; before committing, the repo git email is set to the GitHub no-reply address; the change is committed and pushed to origin; the run tries to confirm the Vercel deploy status and reports honestly what it found.

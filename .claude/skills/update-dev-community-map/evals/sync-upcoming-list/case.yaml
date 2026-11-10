@@ -1,0 +1,4 @@
+schema_version: "1.1"
+name: sync-upcoming-list
+expected_outcome: |
+  The map matches the list: Kolkata (missing from the list) is removed, Mumbai is added as an India pin, Perth's attendee count becomes 25, every other listed event is still present once, virtual events stay pin-less, the check passes, nothing is committed.

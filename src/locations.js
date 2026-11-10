@@ -30,27 +30,100 @@ function locationCell(loc) {
   return { col: col + (loc.nudge?.col ?? 0), row: row + (loc.nudge?.row ?? 0) };
 }
 
-// Paint every cell of each country in data.countryColors onto a base grid
-// ({ "col,row": paletteIndex }). A country too small to own any cell (e.g.
-// Singapore) lights the land cells within one cell of its pins instead.
-// countryLookup: Map "col,row" -> country name (from buildCountryLookup).
-export function applyCountryColors(grid, countryLookup, paletteHexes) {
-  const colors = Object.entries(data.countryColors ?? {}).filter(([k]) => !k.startsWith("_"));
-  for (const [country, hex] of colors) {
-    const ci = paletteHexes.findIndex(h => h.toLowerCase() === hex.toLowerCase());
-    if (ci < 0) continue;
-    let painted = 0;
-    for (const [key, name] of countryLookup) {
-      if (name === country && key in grid) { grid[key] = ci; painted++; }
-    }
-    if (painted > 0) continue;
+// ─── Country lighting ────────────────────────────────────────────────────────
+// Every country with a pin (plus any in data.litCountries) is painted across
+// all of its grid cells, using real boundaries from countryLookup.js.
+// Colors are picked automatically so neighbours differ; data.countryColors can
+// pin a specific color for a country.
+
+// Colors available for auto-assignment, in preference order. Pink and Blue are
+// the pin colors (upcoming / held) and Ice Blue is too close to the held Blue;
+// a country must contrast with its pins however their status changes over time.
+// `family` groups look-alikes, so bordering countries avoid near-identical hues.
+export const COUNTRY_PALETTE = [
+  { label: "Deep Purple",   hex: "#6923B6", family: "purple" },
+  { label: "Orange",        hex: "#FF9F2C", family: "orange" },
+  { label: "Violet",        hex: "#BA4ACA", family: "purple" },
+  { label: "Bright Orange", hex: "#FC5B05", family: "orange" },
+];
+// Chebyshev distance in grid cells. Within BORDER = shares a border or a narrow
+// strait (must differ). Within NEARBY = visually close, e.g. Australia and
+// New Zealand (should differ when a color is free).
+export const BORDER_CELLS = 2;
+export const NEARBY_CELLS = 6;
+
+// Cells for each lit country: "col,row" keys. A country too small to own a
+// cell (Singapore) gets the land cells within one cell of its pins.
+export function litCountryCells(countryLookup, landKeys) {
+  const order = [];
+  const add = (c) => { if (c && !order.includes(c)) order.push(c); };
+  for (const c of Object.keys(data.countryColors ?? {})) if (!c.startsWith("_")) add(c);
+  for (const loc of data.locations) add(loc.country);
+  for (const c of data.litCountries ?? []) add(c);
+
+  const cells = new Map(order.map(c => [c, []]));
+  for (const [key, name] of countryLookup) if (cells.has(name) && landKeys.has(key)) cells.get(name).push(key);
+  for (const [country, keys] of cells) {
+    if (keys.length) continue;
     for (const loc of data.locations.filter(l => l.country === country)) {
       const { col, row } = locationCell(loc);
       for (let dc = -1; dc <= 1; dc++) for (let dr = -1; dr <= 1; dr++) {
         const key = `${col + dc},${row + dr}`;
-        if (key in grid) grid[key] = ci;
+        if (landKeys.has(key) && !keys.includes(key)) keys.push(key);
       }
     }
+  }
+  return cells; // Map in assignment order: pinned colors first, then first appearance
+}
+
+function cellDistance(aKeys, bKeys) {
+  let d = Infinity;
+  const B = bKeys.map(k => k.split(",").map(Number));
+  for (const k of aKeys) {
+    const [x1, y1] = k.split(",").map(Number);
+    for (const [x2, y2] of B) d = Math.min(d, Math.max(Math.abs(x1 - x2), Math.abs(y1 - y2)));
+  }
+  return d;
+}
+
+// Map country -> hex. Greedy, in a stable order, so appending a country never
+// recolors the ones before it. Avoids (in priority order) a bordering country's
+// color, a bordering country's color family, a nearby country's color; then
+// takes the least-used color for variety, then palette order.
+export function assignCountryColors(cells) {
+  const colors = new Map();
+  const used = new Map(COUNTRY_PALETTE.map(p => [p.hex, 0]));
+  const familyOf = (hex) => COUNTRY_PALETTE.find(p => p.hex.toLowerCase() === hex.toLowerCase())?.family;
+  const pinned = data.countryColors ?? {};
+  for (const [country, keys] of cells) {
+    let hex = pinned[country];
+    if (!hex) {
+      const border = new Set(), borderFamily = new Set(), near = new Set();
+      for (const [other, oc] of colors) {
+        const d = cellDistance(keys, cells.get(other));
+        if (d <= BORDER_CELLS) { border.add(oc); borderFamily.add(familyOf(oc)); }
+        else if (d <= NEARBY_CELLS) near.add(oc);
+      }
+      const rank = (p) => (border.has(p.hex) ? 4 : 0) + (borderFamily.has(p.family) ? 2 : 0) + (near.has(p.hex) ? 1 : 0);
+      hex = [...COUNTRY_PALETTE]
+        .sort((a, b) => rank(a) - rank(b) || used.get(a.hex) - used.get(b.hex))[0].hex;
+    }
+    colors.set(country, hex);
+    used.set(hex, (used.get(hex) ?? 0) + 1);
+  }
+  return colors;
+}
+
+// Paint the lit countries onto a grid ({ "col,row": paletteIndex }). All other
+// land is reset to navy (index 0); RAW_CELLS colors are only boundary hints.
+export function applyCountryColors(grid, countryLookup, paletteHexes) {
+  const land = new Set(Object.keys(grid));
+  for (const k of land) grid[k] = 0;
+  const cells = litCountryCells(countryLookup, land);
+  for (const [country, hex] of assignCountryColors(cells)) {
+    const ci = paletteHexes.findIndex(h => h.toLowerCase() === hex.toLowerCase());
+    if (ci < 0) continue;
+    for (const k of cells.get(country)) grid[k] = ci;
   }
   return grid;
 }
