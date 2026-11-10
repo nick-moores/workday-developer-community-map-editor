@@ -55,12 +55,17 @@ Preview the map, clear `localStorage` first (cached editor state), and show the 
 
 Say what you couldn't verify (e.g. no lint because oxlint couldn't install).
 
-## 5. Export the SVG and the 1920×1080 PNG — every time
+## 5. Export the SVG and the 1920×1080 PNGs — every time
 The user wants image files of the updated map at the end of every change (for slides and posts), so produce them even if they don't ask:
 ```bash
 node $SKILL/scripts/export_map.mjs .
 ```
-It renders from the same app code and writes `exports/workday-map.svg` (identical to the editor's "Export SVG": transparent background, labels and legend) and `exports/workday-map-1920x1080.png` (navy background, map centred) using headless Chrome. `exports/` is gitignored — never commit these. Look at the PNG yourself (it's a quick sanity check that the map reads well), then hand both files to the user: with a file-sending tool (e.g. `SendUserFile`) if you have one, otherwise give the two absolute paths. If the map changed again later in the conversation, re-export.
+It renders from the same app code with headless Chrome and writes to `exports/` (gitignored — never commit these):
+- `workday-map.svg`: identical to the editor's "Export SVG", with a transparent background, labels and legend.
+- `workday-map-1920x1080-022043.png`: the map centred on the deck navy `#022043`.
+- `workday-map-1920x1080-transparent.png`: the same with a transparent background, for dropping onto any slide colour.
+
+For a different background, pass `--bg "#rrggbb,transparent"` (any comma-separated mix). Look at the navy PNG yourself (a quick check that the map reads well), then hand all three files to the user: with a file-sending tool (e.g. `SendUserFile`) if you have one, otherwise give the absolute paths. If the map changed again later in the conversation, re-export.
 
 ## 6. Commit and push — only when the user says so
 Pushing `main` redeploys the public site. Before committing, the repo-local git email must be the GitHub no-reply address, or Vercel blocks the deploy ("GitHub couldn't verify an account for the commit"):
