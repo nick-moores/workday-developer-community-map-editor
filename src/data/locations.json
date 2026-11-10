@@ -1,0 +1,133 @@
+{
+  "_readme": "One entry per map pin. Pin status (held vs upcoming) is derived at runtime from the latest event end date. col/row are computed from lat/lon; use nudge to shift a pin by whole grid cells, and labelSide \"left\" to put the label on the left of the pin. Pins with an empty events list are earlier 2026 events with no details recorded (shown as held). country must match a name in src/countryLookup.js; add it to countryColors to light it up (a country too small to own grid cells, like Singapore, lights the land cells around its pins). Virtual events have no location, so they live in virtualEvents and get no pin.",
+  "countryColors": {
+    "_note": "Countries painted at runtime (every grid cell in the country). Countries lit before this file existed (Spain, Poland, India, Japan, United States, Canada) are hand-painted in RAW_CELLS in App.jsx and not listed here.",
+    "United Kingdom": "#FFC2FD",
+    "Australia": "#6923B6",
+    "New Zealand": "#FF9F2C",
+    "Singapore": "#9ECFFF"
+  },
+  "locations": [
+    {
+      "name": "Barcelona, Spain",
+      "country": "Spain",
+      "lat": 41.39, "lon": 2.17,
+      "nudge": { "col": 0, "row": 1 },
+      "events": [
+        { "title": "Rising EMEA Extend AI", "start": "2026-11-12", "end": "2026-11-22", "type": "test-drive", "attendees": 75 }
+      ]
+    },
+    {
+      "name": "Warsaw, Poland",
+      "country": "Poland",
+      "lat": 52.23, "lon": 21.01,
+      "nudge": { "col": 1, "row": 0 },
+      "events": []
+    },
+    {
+      "name": "London, UK",
+      "country": "United Kingdom",
+      "lat": 51.51, "lon": -0.13,
+      "events": [{ "title": "NESO Innovation Day", "start": "2026-11-03", "type": "test-drive", "attendees": 6 }]
+    },
+    {
+      "name": "Pune, India",
+      "country": "India",
+      "labelSide": "left",
+      "lat": 18.52, "lon": 73.86,
+      "events": []
+    },
+    {
+      "name": "Hyderabad, India",
+      "country": "India",
+      "lat": 17.39, "lon": 78.49,
+      "events": [{ "title": "Meetup: hands-on agent building", "start": "2026-11-19", "type": "meetup" }]
+    },
+    {
+      "name": "Bengaluru, India",
+      "country": "India",
+      "lat": 12.97, "lon": 77.59,
+      "nudge": { "col": 1, "row": -1 },
+      "events": [
+        { "title": "WeAreDevelopers (scouting: developer engagement, Developer Program signups, ambassador recruiting)", "start": "2026-11-22", "end": "2026-11-24", "type": "conference" }
+      ]
+    },
+    {
+      "name": "Kolkata, India",
+      "country": "India",
+      "lat": 22.57, "lon": 88.36,
+      "events": [{ "title": "Meetup: hands-on agent building", "start": "2026-11-21", "type": "meetup" }]
+    },
+    {
+      "name": "Singapore",
+      "country": "Singapore",
+      "lat": 1.35, "lon": 103.82,
+      "events": [{ "title": "Experience Days Singapore", "start": "2026-11-24", "end": "2026-11-25", "type": "test-drive", "attendees": 30 }]
+    },
+    {
+      "name": "Perth, Australia",
+      "country": "Australia",
+      "lat": -31.95, "lon": 115.86,
+      "events": [{ "title": "Innovation Days Perth", "start": "2026-11-10", "end": "2026-11-11", "type": "test-drive", "attendees": 20 }]
+    },
+    {
+      "name": "Sydney, Australia",
+      "country": "Australia",
+      "lat": -33.87, "lon": 151.21,
+      "events": [{ "title": "Innovation Days Sydney", "start": "2026-11-12", "end": "2026-11-13", "type": "test-drive", "attendees": 20 }]
+    },
+    {
+      "name": "Melbourne, Australia",
+      "country": "Australia",
+      "lat": -37.81, "lon": 144.96,
+      "events": [{ "title": "Innovation Days Melbourne", "start": "2026-11-17", "end": "2026-11-18", "type": "test-drive", "attendees": 20 }]
+    },
+    {
+      "name": "Auckland, New Zealand",
+      "country": "New Zealand",
+      "lat": -36.85, "lon": 174.76,
+      "nudge": { "col": -1, "row": 0 },
+      "events": [{ "title": "Innovation Days Auckland", "start": "2026-11-19", "end": "2026-11-20", "type": "test-drive", "attendees": 20 }]
+    },
+    {
+      "name": "Tokyo, Japan",
+      "country": "Japan",
+      "lat": 35.68, "lon": 139.69,
+      "nudge": { "col": -1, "row": 0 },
+      "events": []
+    },
+    {
+      "name": "San Francisco, CA",
+      "country": "United States",
+      "lat": 37.77, "lon": -122.42,
+      "nudge": { "col": -1, "row": 0 },
+      "events": []
+    },
+    {
+      "name": "Toronto, Canada",
+      "country": "Canada",
+      "lat": 43.65, "lon": -79.38,
+      "nudge": { "col": 1, "row": -1 },
+      "events": []
+    },
+    {
+      "name": "Washington, D.C.",
+      "country": "United States",
+      "lat": 38.91, "lon": -77.04,
+      "nudge": { "col": 1, "row": 0 },
+      "events": []
+    },
+    {
+      "name": "Dallas, Texas",
+      "country": "United States",
+      "lat": 32.78, "lon": -96.80,
+      "nudge": { "col": -2, "row": 2 },
+      "events": []
+    }
+  ],
+  "virtualEvents": [
+    { "title": "EMEA Virtual Test Drive", "start": "2026-11-10", "end": "2026-11-11", "type": "test-drive", "attendees": 20 },
+    { "title": "NA Virtual Test Drive", "start": "2026-11-10", "end": "2026-11-11", "type": "test-drive", "attendees": 50 },
+    { "title": "EMEA Virtual Test Drive", "start": "2026-11-24", "end": "2026-11-25", "type": "test-drive", "attendees": 20 }
+  ]
+}
